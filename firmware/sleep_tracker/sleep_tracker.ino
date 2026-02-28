@@ -5,25 +5,24 @@
  * via UART, then POSTs the data to the Vercel API over HTTPS every 30s.
  *
  * Hardware: Seeed Studio XIAO ESP32C6 + MR60BHA2 kit
- * Library:  Seeed mmWave Library (install via Arduino Library Manager)
- *           Search: "Seeed mmWave"  →  by Seeed Studio
+ * Library:  Seeed Arduino mmWave (install via Arduino Library Manager)
+ *           Search: "Seeed Arduino mmWave"  →  by Seeed Studio
  *
  * Setup:
  *   1. Copy secrets.h.example → secrets.h and fill in your values
- *   2. Install the Seeed mmWave library
- *   3. Select board: "XIAO_ESP32C6" in Arduino IDE
- *   4. Flash and open Serial Monitor at 115200 baud
+ *   2. Install "Seeed Arduino mmWave" library in Arduino IDE
+ *   3. Install "ArduinoJson" library in Arduino IDE
+ *   4. Select board: "XIAO_ESP32C6" in Arduino IDE
+ *   5. Flash and open Serial Monitor at 115200 baud
  */
 
+#include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
+#include <Seeed_Arduino_mmWave.h>
 #include "secrets.h"
 
-// Seeed mmWave library — provides MR60BHA2 class
-#include <mmWave.h>
-
 // ── ISRG Root X1 CA cert (for *.vercel.app) ──────────────────────────
-// This certificate validates the Vercel TLS connection.
 // Valid until 2035-06-04. Update if expired.
 static const char* VERCEL_ROOT_CA =
   "-----BEGIN CERTIFICATE-----\n"
@@ -59,19 +58,19 @@ static const char* VERCEL_ROOT_CA =
   "-----END CERTIFICATE-----\n";
 
 // ── Sensor & timing constants ─────────────────────────────────────────
-#define SENSOR_RX_PIN   17     // GPIO17 → MR60BHA2 TX
-#define SENSOR_TX_PIN   16     // GPIO16 → MR60BHA2 RX
-#define POST_INTERVAL_MS 30000 // 30 seconds between posts
+#define SENSOR_RX_PIN    17     // GPIO17 → MR60BHA2 TX
+#define SENSOR_TX_PIN    16     // GPIO16 → MR60BHA2 RX
+#define POST_INTERVAL_MS 30000  // 30 seconds between posts
 
-// ── Globals ───────────────────────────────────────────────────────────
-HardwareSerial sensorSerial(1); // UART1
-MR60BHA2 radar;                 // Seeed mmWave sensor object
+// ── Sensor setup ──────────────────────────────────────────────────────
+HardwareSerial sensorSerial(1);  // UART1
+SEEED_MR60BHA2 radar;
 
+// ── Last known values (sent even if no new reading this cycle) ────────
 float lastBreathingRate = 0;
 float lastHeartRate     = 0;
 float lastDistance      = 0;
 bool  lastPresence      = false;
-int   lastMovement      = 0;
 
 unsigned long lastPostTime = 0;
 
@@ -79,18 +78,18 @@ unsigned long lastPostTime = 0;
 void setup() {
   Serial.begin(115200);
   delay(1000);
-  Serial.println("[SleepTracker] Booting…");
+  Serial.println("[SleepTracker] Booting...");
 
-  // Sensor serial
+  // Init sensor serial on UART1
   sensorSerial.begin(115200, SERIAL_8N1, SENSOR_RX_PIN, SENSOR_TX_PIN);
   radar.begin(&sensorSerial);
   Serial.println("[SleepTracker] Sensor initialized");
 
-  // WiFi
+  // Connect WiFi
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("[SleepTracker] Connecting to WiFi");
   int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 30) {
+  while (WiFi.status() != WL_CONNECTED && attempts < 40) {
     delay(500);
     Serial.print(".");
     attempts++;
@@ -98,45 +97,47 @@ void setup() {
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println("\n[SleepTracker] WiFi connected: " + WiFi.localIP().toString());
   } else {
-    Serial.println("\n[SleepTracker] WiFi failed — will retry in loop");
+    Serial.println("\n[SleepTracker] WiFi failed - will retry in loop");
   }
 }
 
 // ── Main loop ─────────────────────────────────────────────────────────
 void loop() {
-  // Read latest sensor data
   readSensor();
 
-  // Post every POST_INTERVAL_MS
   unsigned long now = millis();
   if (now - lastPostTime >= POST_INTERVAL_MS) {
     lastPostTime = now;
+
+    // Reconnect WiFi if dropped
     if (WiFi.status() != WL_CONNECTED) {
-      Serial.println("[SleepTracker] WiFi not connected — skipping post");
-    } else {
-      bool ok = postData();
-      if (!ok) {
-        Serial.println("[SleepTracker] Post failed — retrying in 10s");
+      Serial.println("[SleepTracker] WiFi lost - reconnecting...");
+      WiFi.reconnect();
+      delay(3000);
+    }
+
+    if (WiFi.status() == WL_CONNECTED) {
+      if (!postData()) {
+        Serial.println("[SleepTracker] Post failed - retrying in 10s");
         delay(10000);
-        postData(); // one retry
+        postData();
       }
     }
   }
-
-  delay(100); // short yield
 }
 
-// ── Read sensor values ────────────────────────────────────────────────
+// ── Poll sensor for new frames ────────────────────────────────────────
 void readSensor() {
-  if (radar.available()) {
-    lastPresence      = radar.getPresence();
-    lastBreathingRate = radar.getBreathRate();
-    lastHeartRate     = radar.getHeartRate();
-    lastDistance      = radar.getDistance();
-    lastMovement      = radar.getMovement();
+  if (radar.update(100)) {  // process incoming serial frames (100ms timeout)
+    float br, hr, dist;
 
-    Serial.printf("[Sensor] Presence=%d BR=%.1f HR=%.1f Dist=%.2f Mov=%d\n",
-      lastPresence, lastBreathingRate, lastHeartRate, lastDistance, lastMovement);
+    if (radar.getBreathRate(br))    lastBreathingRate = br;
+    if (radar.getHeartRate(hr))     lastHeartRate     = hr;
+    if (radar.getDistance(dist))    lastDistance      = dist;
+    lastPresence = radar.isHumanDetected();
+
+    Serial.printf("[Sensor] Presence=%d BR=%.1f HR=%.1f Dist=%.2f\n",
+      lastPresence, lastBreathingRate, lastHeartRate, lastDistance);
   }
 }
 
@@ -146,7 +147,7 @@ bool postData() {
   client.setCACert(VERCEL_ROOT_CA);
   client.setTimeout(10);
 
-  Serial.print("[SleepTracker] Connecting to " API_HOST "…");
+  Serial.print("[SleepTracker] Connecting to " API_HOST "...");
   if (!client.connect(API_HOST, 443)) {
     Serial.println(" FAILED");
     return false;
@@ -154,12 +155,12 @@ bool postData() {
   Serial.println(" OK");
 
   // Build JSON payload
-  StaticJsonDocument<256> doc;
+  JsonDocument doc;
   doc["breathing_rate"] = lastBreathingRate;
   doc["heart_rate"]     = lastHeartRate;
   doc["distance"]       = lastDistance;
   doc["presence"]       = lastPresence;
-  doc["movement_state"] = lastMovement;
+  doc["movement_state"] = 0;  // reserved for future motion detection
 
   String body;
   serializeJson(doc, body);
@@ -176,11 +177,10 @@ bool postData() {
 
   client.print(request);
 
-  // Read response status line
+  // Read first line of response to check status code
   String statusLine = client.readStringUntil('\n');
   Serial.println("[Response] " + statusLine);
 
   client.stop();
-
   return statusLine.indexOf("200") >= 0;
 }
