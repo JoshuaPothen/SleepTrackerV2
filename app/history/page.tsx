@@ -87,7 +87,8 @@ export default function HistoryPage() {
             {/* Stage bar chart */}
             <div className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
               <p className="text-sm font-medium mb-4" style={{ color: 'var(--text)' }}>Sleep Stages per Night</p>
-              <ResponsiveContainer width="100%" height={200}>
+              <div className="h-36 sm:h-52">
+              <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={barData} margin={{ top: 4, right: 12, left: -16, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                   <XAxis dataKey="date" tick={{ fill: '#7d8590', fontSize: 11 }} axisLine={false} tickLine={false} />
@@ -99,11 +100,13 @@ export default function HistoryPage() {
                   <Bar dataKey="Awake" stackId="a" fill="#fbbf24" radius={[4,4,0,0]} />
                 </BarChart>
               </ResponsiveContainer>
+              </div>
             </div>
 
             {/* Table */}
             <div className="rounded-xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-              <table className="w-full text-sm">
+              <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[520px]">
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border)' }}>
                     {['Date','Quality','Avg HR','Avg BR','Deep','Light','Awake'].map((h) => (
@@ -127,6 +130,7 @@ export default function HistoryPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           </>
         )}

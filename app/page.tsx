@@ -76,9 +76,9 @@ export default function DashboardPage() {
             <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--indigo)' }} />
             <h1 className="text-base font-semibold" style={{ color: 'var(--text)' }}>Sleep Tracker</h1>
           </div>
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-3 sm:gap-5">
             <LiveClock />
-            <nav className="flex gap-4">
+            <nav className="flex gap-3 sm:gap-4">
               <span className="text-sm font-medium pb-0.5 border-b" style={{ color: 'var(--indigo)', borderColor: 'var(--indigo)' }}>Dashboard</span>
               <Link href="/history" className="text-sm pb-0.5 transition-colors" style={{ color: 'var(--muted)' }}>History</Link>
             </nav>
@@ -97,7 +97,7 @@ export default function DashboardPage() {
         <CurrentVitals latest={latest} />
 
         {/* Chart */}
-        <div className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <div className="rounded-xl p-3 sm:p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>Vitals — Last 4 Hours</p>
             <p className="text-xs" style={{ color: 'var(--muted)' }}>BR left · HR right</p>

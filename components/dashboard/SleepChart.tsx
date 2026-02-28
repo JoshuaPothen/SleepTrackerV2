@@ -21,7 +21,8 @@ export default function SleepChart({ readings }: Props) {
   }
 
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <div className="h-40 sm:h-56">
+    <ResponsiveContainer width="100%" height="100%">
       <LineChart data={data} margin={{ top: 4, right: 12, left: -16, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
         <XAxis
@@ -58,5 +59,6 @@ export default function SleepChart({ readings }: Props) {
         <Line yAxisId="hr" type="monotone" dataKey="HR" stroke="#f87171" strokeWidth={2} dot={false} connectNulls />
       </LineChart>
     </ResponsiveContainer>
+    </div>
   );
 }

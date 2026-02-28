@@ -34,7 +34,7 @@ export default function SleepSummaryCard({ qualityScore, avgHr, avgBr, stageCoun
         {date ?? "Last Night's Summary"}
       </p>
 
-      <div className="flex items-start gap-6">
+      <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
         {/* Score + stats */}
         <div className="flex flex-col gap-3 min-w-[100px]">
           <div>
@@ -51,7 +51,7 @@ export default function SleepSummaryCard({ qualityScore, avgHr, avgBr, stageCoun
         </div>
 
         {/* Donut + legend */}
-        <div className="flex-1 flex flex-col items-center">
+        <div className="flex-1 w-full flex flex-col items-center">
           {hasData ? (
             <>
               <ResponsiveContainer width="100%" height={120}>

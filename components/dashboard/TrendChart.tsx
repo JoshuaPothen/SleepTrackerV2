@@ -20,7 +20,8 @@ export default function TrendChart({ data }: Props) {
   }));
 
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <div className="h-40 sm:h-56">
+    <ResponsiveContainer width="100%" height="100%">
       <AreaChart data={chartData} margin={{ top: 4, right: 12, left: -16, bottom: 0 }}>
         <defs>
           <linearGradient id="gHR" x1="0" y1="0" x2="0" y2="1">
@@ -49,5 +50,6 @@ export default function TrendChart({ data }: Props) {
         <Area type="monotone" dataKey="Quality"        stroke="#818cf8" fill="url(#gQ)"  strokeWidth={2} dot={false} />
       </AreaChart>
     </ResponsiveContainer>
+    </div>
   );
 }

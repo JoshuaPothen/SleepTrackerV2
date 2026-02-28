@@ -33,17 +33,17 @@ const cards = [
 
 export default function CurrentVitals({ latest }: Props) {
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-3 sm:grid-cols-3 gap-2 sm:gap-3">
       {cards.map(({ key, label, unit, accent, getValue }) => (
         <div
           key={key}
-          className="rounded-xl p-4 flex flex-col gap-1"
+          className="rounded-xl p-3 sm:p-4 flex flex-col gap-1"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
         >
           {/* top accent bar */}
           <div className="h-0.5 w-8 rounded-full mb-2" style={{ background: accent }} />
           <p className="text-xs font-medium" style={{ color: 'var(--muted)' }}>{label}</p>
-          <p className="text-2xl font-bold tracking-tight" style={{ color: accent }}>
+          <p className="text-xl sm:text-2xl font-bold tracking-tight" style={{ color: accent }}>
             {latest ? getValue(latest) : '—'}
           </p>
           {unit && <p className="text-xs" style={{ color: 'var(--muted)' }}>{unit}</p>}
