@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, Title, Text, BarChart, Table, TableHead, TableRow, TableHeaderCell, TableBody, TableCell, Badge } from '@tremor/react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import TrendChart from '@/components/dashboard/TrendChart';
 import Link from 'next/link';
 
@@ -14,11 +14,11 @@ interface DaySummary {
   reading_count: number;
 }
 
-function qualityColor(score: number | null): 'emerald' | 'yellow' | 'rose' | 'gray' {
-  if (score === null) return 'gray';
-  if (score >= 7) return 'emerald';
-  if (score >= 4) return 'yellow';
-  return 'rose';
+function scoreColor(s: number | null) {
+  if (s === null) return 'var(--muted)';
+  if (s >= 7) return 'var(--green)';
+  if (s >= 4) return 'var(--amber)';
+  return 'var(--rose)';
 }
 
 export default function HistoryPage() {
@@ -30,126 +30,108 @@ export default function HistoryPage() {
     setLoading(true);
     fetch(`/api/summary?days=${days}`)
       .then((r) => r.json())
-      .then(({ summary: data }) => {
-        setSummary(data ?? []);
-        setLoading(false);
-      });
+      .then(({ summary: data }) => { setSummary(data ?? []); setLoading(false); });
   }, [days]);
 
-  const stageBarData = summary.map((d) => ({
-    date: d.date,
-    'Deep Sleep': d.stage_counts.deep,
-    'Light Sleep': d.stage_counts.light,
+  const barData = summary.map((d) => ({
+    date: d.date.slice(5),
+    Deep: d.stage_counts.deep,
+    Light: d.stage_counts.light,
     Awake: d.stage_counts.awake,
   }));
 
   return (
-    <main className="min-h-screen bg-gray-50 p-4 sm:p-8">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <main className="min-h-screen p-4 sm:p-6" style={{ background: 'var(--bg)' }}>
+      <div className="max-w-2xl mx-auto space-y-4">
 
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Sleep History</h1>
-            <p className="text-sm text-gray-500">Trends and nightly breakdowns</p>
+        <div className="flex items-center justify-between py-2">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full" style={{ background: 'var(--indigo)' }} />
+            <h1 className="text-base font-semibold" style={{ color: 'var(--text)' }}>Sleep Tracker</h1>
           </div>
           <nav className="flex gap-4">
-            <Link href="/" className="text-sm text-gray-500 hover:text-indigo-600 transition-colors pb-0.5">
-              Dashboard
-            </Link>
-            <span className="text-sm font-semibold text-indigo-600 border-b-2 border-indigo-600 pb-0.5">
-              History
-            </span>
+            <Link href="/" className="text-sm pb-0.5 transition-colors" style={{ color: 'var(--muted)' }}>Dashboard</Link>
+            <span className="text-sm font-medium pb-0.5 border-b" style={{ color: 'var(--indigo)', borderColor: 'var(--indigo)' }}>History</span>
           </nav>
         </div>
 
-        {/* Period selector */}
+        {/* Period tabs */}
         <div className="flex gap-2">
           {[7, 14, 30].map((d) => (
             <button
               key={d}
               onClick={() => setDays(d)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                days === d
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white text-gray-600 border border-gray-200 hover:border-indigo-400'
-              }`}
+              className="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors"
+              style={{
+                background: days === d ? 'var(--indigo)' : 'var(--surface)',
+                color: days === d ? '#fff' : 'var(--muted)',
+                border: `1px solid ${days === d ? 'var(--indigo)' : 'var(--border)'}`,
+              }}
             >
-              {d} days
+              {d}d
             </button>
           ))}
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center h-48 text-gray-400 text-sm">Loading…</div>
+          <div className="flex items-center justify-center h-48 text-sm" style={{ color: 'var(--muted)' }}>Loading…</div>
         ) : (
           <>
             {/* Trend area chart */}
-            <TrendChart data={summary} />
+            <div className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+              <p className="text-sm font-medium mb-4" style={{ color: 'var(--text)' }}>Trends</p>
+              <TrendChart data={summary} />
+            </div>
 
-            {/* Stage breakdown bar chart */}
-            <Card>
-              <Title>Sleep Stage Breakdown</Title>
-              <Text className="mb-4">Readings per stage per night</Text>
-              <BarChart
-                data={stageBarData}
-                index="date"
-                categories={['Deep Sleep', 'Light Sleep', 'Awake']}
-                colors={['indigo', 'blue', 'amber']}
-                className="h-56"
-                stack
-              />
-            </Card>
+            {/* Stage bar chart */}
+            <div className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+              <p className="text-sm font-medium mb-4" style={{ color: 'var(--text)' }}>Sleep Stages per Night</p>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={barData} margin={{ top: 4, right: 12, left: -16, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                  <XAxis dataKey="date" tick={{ fill: '#7d8590', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: '#7d8590', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ background: '#1c2333', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#e6edf3', fontSize: 12 }} labelStyle={{ color: '#7d8590' }} />
+                  <Legend wrapperStyle={{ fontSize: 12, color: '#7d8590', paddingTop: 8 }} />
+                  <Bar dataKey="Deep"  stackId="a" fill="#818cf8" radius={[0,0,0,0]} />
+                  <Bar dataKey="Light" stackId="a" fill="#60a5fa" radius={[0,0,0,0]} />
+                  <Bar dataKey="Awake" stackId="a" fill="#fbbf24" radius={[4,4,0,0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
 
-            {/* Nightly summary table */}
-            <Card>
-              <Title>Nightly Summary</Title>
-              <Table className="mt-4">
-                <TableHead>
-                  <TableRow>
-                    <TableHeaderCell>Date</TableHeaderCell>
-                    <TableHeaderCell>Quality</TableHeaderCell>
-                    <TableHeaderCell>Avg HR</TableHeaderCell>
-                    <TableHeaderCell>Avg BR</TableHeaderCell>
-                    <TableHeaderCell>Deep</TableHeaderCell>
-                    <TableHeaderCell>Light</TableHeaderCell>
-                    <TableHeaderCell>Awake</TableHeaderCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
+            {/* Table */}
+            <div className="rounded-xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    {['Date','Quality','Avg HR','Avg BR','Deep','Light','Awake'].map((h) => (
+                      <th key={h} className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--muted)' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
                   {summary.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center text-gray-400 py-8">
-                        No data available for this period
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    summary.map((d) => (
-                      <TableRow key={d.date}>
-                        <TableCell className="font-medium">{d.date}</TableCell>
-                        <TableCell>
-                          <Badge color={qualityColor(d.quality_score)}>
-                            {d.quality_score ?? '—'} / 10
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{d.avg_hr ?? '—'} BPM</TableCell>
-                        <TableCell>{d.avg_br ?? '—'} br/min</TableCell>
-                        <TableCell>{d.stage_counts.deep}</TableCell>
-                        <TableCell>{d.stage_counts.light}</TableCell>
-                        <TableCell>{d.stage_counts.awake}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </Card>
+                    <tr><td colSpan={7} className="text-center py-10 text-sm" style={{ color: 'var(--muted)' }}>No data for this period</td></tr>
+                  ) : summary.map((d) => (
+                    <tr key={d.date} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td className="px-4 py-3 font-medium" style={{ color: 'var(--text)' }}>{d.date}</td>
+                      <td className="px-4 py-3 font-bold" style={{ color: scoreColor(d.quality_score) }}>{d.quality_score ?? '—'}</td>
+                      <td className="px-4 py-3" style={{ color: 'var(--rose)' }}>{d.avg_hr ?? '—'}</td>
+                      <td className="px-4 py-3" style={{ color: 'var(--blue)' }}>{d.avg_br ?? '—'}</td>
+                      <td className="px-4 py-3" style={{ color: '#818cf8' }}>{d.stage_counts.deep}</td>
+                      <td className="px-4 py-3" style={{ color: '#60a5fa' }}>{d.stage_counts.light}</td>
+                      <td className="px-4 py-3" style={{ color: '#fbbf24' }}>{d.stage_counts.awake}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </>
         )}
 
-        {/* ActionBar stub */}
-        <div id="action-bar" className="flex gap-3 flex-wrap">
-          {/* Future controls */}
-        </div>
+        <div id="action-bar" className="flex gap-3 flex-wrap" />
       </div>
     </main>
   );
