@@ -146,7 +146,6 @@ void readSensor() {
 bool postData() {
   WiFiClientSecure client;
   client.setCACert(VERCEL_ROOT_CA);
-  client.setTimeout(10);
 
   Serial.print("[SleepTracker] Connecting to " API_HOST "...");
   if (!client.connect(API_HOST, 443)) {
@@ -161,25 +160,31 @@ bool postData() {
   doc["heart_rate"]     = lastHeartRate;
   doc["distance"]       = lastDistance;
   doc["presence"]       = lastPresence;
-  doc["movement_state"] = 0;  // reserved for future motion detection
+  doc["movement_state"] = 0;
 
   String body;
   serializeJson(doc, body);
 
-  // HTTP POST
-  String request =
-    String("POST ") + API_PATH + " HTTP/1.1\r\n" +
-    "Host: " + API_HOST + "\r\n" +
-    "Content-Type: application/json\r\n" +
-    "X-API-Key: " + INGEST_API_KEY + "\r\n" +
-    "Content-Length: " + body.length() + "\r\n" +
-    "Connection: close\r\n\r\n" +
-    body;
+  // Send HTTP POST line by line (avoids large String allocation)
+  client.println(String("POST ") + API_PATH + " HTTP/1.1");
+  client.println(String("Host: ") + API_HOST);
+  client.println("Content-Type: application/json");
+  client.println(String("X-API-Key: ") + INGEST_API_KEY);
+  client.println(String("Content-Length: ") + body.length());
+  client.println("Connection: close");
+  client.println();   // blank line ends headers
+  client.print(body);
+  client.flush();     // ensure all bytes are sent before reading
 
-  client.print(request);
+  // Wait up to 5s for the server to start responding
+  unsigned long waitStart = millis();
+  while (!client.available() && millis() - waitStart < 5000) {
+    delay(10);
+  }
 
-  // Read first line of response to check status code
+  // Read the status line (e.g. "HTTP/1.1 200 OK")
   String statusLine = client.readStringUntil('\n');
+  statusLine.trim();
   Serial.println("[Response] " + statusLine);
 
   client.stop();
