@@ -55,7 +55,7 @@ export default function HRVChart({ readings }: Props) {
             <Tooltip
               contentStyle={{ background: '#1c2333', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#e6edf3', fontSize: 12 }}
               labelStyle={{ color: '#7d8590' }}
-              formatter={(v: number) => [v.toFixed(4), 'Cardiac Phase']}
+              formatter={(v: number | undefined) => [v != null ? v.toFixed(4) : '—', 'Cardiac Phase']}
             />
             <Line type="monotone" dataKey="phase" stroke="#a78bfa" strokeWidth={2} dot={false} connectNulls />
           </LineChart>
