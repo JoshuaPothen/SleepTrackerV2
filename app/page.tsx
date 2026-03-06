@@ -7,7 +7,7 @@ import SleepSummaryCard from '@/components/dashboard/SleepSummaryCard';
 import SleepStateIllustration from '@/components/dashboard/SleepStateIllustration';
 import BreathingWaveformChart from '@/components/dashboard/BreathingWaveformChart';
 import HRVChart from '@/components/dashboard/HRVChart';
-import { createBrowserClient, type SensorReading } from '@/lib/supabase';
+import type { SensorReading } from '@/lib/supabase';
 import Link from 'next/link';
 
 type SleepStage = 'awake' | 'light' | 'deep' | 'absent';
@@ -31,21 +31,16 @@ export default function DashboardPage() {
   const stage: SleepStage = latest?.sleep_stage ?? 'absent';
 
   useEffect(() => {
-    const since = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
-    fetch(`/api/readings?limit=500&since=${encodeURIComponent(since)}`)
-      .then((r) => r.json())
-      .then(({ readings: data }) => { setReadings(data ?? []); setLoading(false); });
-  }, []);
-
-  useEffect(() => {
-    const supabase = createBrowserClient();
-    const channel = supabase
-      .channel('sensor-readings-live')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'sensor_readings' }, (payload) => {
-        setReadings((prev) => [...prev.slice(-499), payload.new as SensorReading]);
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    const poll = () => {
+      const since = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
+      fetch(`/api/readings?limit=500&since=${encodeURIComponent(since)}`)
+        .then((r) => r.json())
+        .then(({ readings: data }) => { setReadings(data ?? []); setLoading(false); })
+        .catch(() => {});
+    };
+    poll();
+    const id = setInterval(poll, 15000);
+    return () => clearInterval(id);
   }, []);
 
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
