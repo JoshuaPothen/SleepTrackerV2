@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
 
   let query = getSupabase()
     .from('sensor_readings')
-    .select('id, recorded_at, breathing_rate, heart_rate, distance, presence, movement_state, sleep_stage')
+    .select('id, recorded_at, breathing_rate, heart_rate, distance, presence, movement_state, sleep_stage, breath_phase, heart_phase, total_phase')
     .order('recorded_at', { ascending: false })
     .limit(limit);
 

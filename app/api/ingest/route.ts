@@ -16,6 +16,9 @@ export async function POST(request: NextRequest) {
     distance?: number;
     presence?: boolean;
     movement_state?: number;
+    breath_phase?: number;
+    heart_phase?: number;
+    total_phase?: number;
   };
 
   try {
@@ -24,7 +27,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { breathing_rate, heart_rate, distance, presence, movement_state } = body;
+  const { breathing_rate, heart_rate, distance, presence, movement_state, breath_phase, heart_phase, total_phase } = body;
 
   // Basic sanity checks
   if (breathing_rate !== undefined && (breathing_rate < 0 || breathing_rate > 40)) {
@@ -50,6 +53,9 @@ export async function POST(request: NextRequest) {
     presence: presence ?? null,
     movement_state: movement_state ?? null,
     sleep_stage,
+    breath_phase: breath_phase ?? null,
+    heart_phase: heart_phase ?? null,
+    total_phase: total_phase ?? null,
   }]);
 
   if (error) {

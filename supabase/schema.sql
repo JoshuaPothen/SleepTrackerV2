@@ -11,8 +11,16 @@ CREATE TABLE IF NOT EXISTS sensor_readings (
   distance       FLOAT,        -- meters to detected subject
   presence       BOOLEAN,      -- human detected by radar
   movement_state INTEGER,      -- 0 = still, 1 = moving
-  sleep_stage    VARCHAR(20)   -- 'awake' | 'light' | 'deep' (inferred server-side)
+  sleep_stage    VARCHAR(20),  -- 'awake' | 'light' | 'deep' (inferred server-side)
+  breath_phase   FLOAT,        -- respiratory phase component (radians)
+  heart_phase    FLOAT,        -- cardiac phase component (radians)
+  total_phase    FLOAT         -- combined phase (radians)
 );
+
+-- Migration for existing databases:
+-- ALTER TABLE sensor_readings ADD COLUMN IF NOT EXISTS breath_phase FLOAT;
+-- ALTER TABLE sensor_readings ADD COLUMN IF NOT EXISTS heart_phase FLOAT;
+-- ALTER TABLE sensor_readings ADD COLUMN IF NOT EXISTS total_phase FLOAT;
 
 -- Index for fast recent-data queries
 CREATE INDEX IF NOT EXISTS idx_sensor_readings_time ON sensor_readings (recorded_at DESC);

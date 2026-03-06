@@ -31,6 +31,9 @@ export type SensorReading = {
   presence: boolean | null;
   movement_state: number | null;
   sleep_stage: 'awake' | 'light' | 'deep' | null;
+  breath_phase: number | null;
+  heart_phase: number | null;
+  total_phase: number | null;
 };
 
 export type SleepSession = {

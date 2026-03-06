@@ -72,6 +72,9 @@ float lastBreathingRate = 0;
 float lastHeartRate     = 0;
 float lastDistance      = 0;
 bool  lastPresence      = false;
+float lastBreathPhase   = 0;
+float lastHeartPhase    = 0;
+float lastTotalPhase    = 0;
 
 unsigned long lastPostTime = 0;
 
@@ -137,8 +140,15 @@ void readSensor() {
     if (radar.getDistance(dist))    lastDistance      = dist;
     lastPresence = radar.isHumanDetected();
 
-    Serial.printf("[Sensor] Presence=%d BR=%.1f HR=%.1f Dist=%.2f\n",
-      lastPresence, lastBreathingRate, lastHeartRate, lastDistance);
+    float bp, hp, tp;
+    if (radar.getHeartBreathPhases(tp, bp, hp)) {
+      lastTotalPhase  = tp;
+      lastBreathPhase = bp;
+      lastHeartPhase  = hp;
+    }
+
+    Serial.printf("[Sensor] Presence=%d BR=%.1f HR=%.1f Dist=%.2f BP=%.4f HP=%.4f\n",
+      lastPresence, lastBreathingRate, lastHeartRate, lastDistance, lastBreathPhase, lastHeartPhase);
   }
 }
 
@@ -161,6 +171,9 @@ bool postData() {
   doc["distance"]       = lastDistance;
   doc["presence"]       = lastPresence;
   doc["movement_state"] = 0;
+  doc["breath_phase"]   = lastBreathPhase;
+  doc["heart_phase"]    = lastHeartPhase;
+  doc["total_phase"]    = lastTotalPhase;
 
   String body;
   serializeJson(doc, body);

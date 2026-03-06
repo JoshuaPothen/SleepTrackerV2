@@ -5,6 +5,8 @@ import CurrentVitals from '@/components/dashboard/CurrentVitals';
 import SleepChart from '@/components/dashboard/SleepChart';
 import SleepSummaryCard from '@/components/dashboard/SleepSummaryCard';
 import SleepStateIllustration from '@/components/dashboard/SleepStateIllustration';
+import BreathingWaveformChart from '@/components/dashboard/BreathingWaveformChart';
+import HRVChart from '@/components/dashboard/HRVChart';
 import { createBrowserClient, type SensorReading } from '@/lib/supabase';
 import Link from 'next/link';
 
@@ -103,6 +105,18 @@ export default function DashboardPage() {
             <p className="text-xs" style={{ color: 'var(--muted)' }}>BR left · HR right</p>
           </div>
           <SleepChart readings={readings} />
+        </div>
+
+        {/* Breathing Waveform */}
+        <div className="rounded-xl p-3 sm:p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <p className="text-sm font-medium mb-4" style={{ color: 'var(--text)' }}>Breathing Waveform</p>
+          <BreathingWaveformChart readings={readings} />
+        </div>
+
+        {/* HRV / Cardiac Phase */}
+        <div className="rounded-xl p-3 sm:p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <p className="text-sm font-medium mb-4" style={{ color: 'var(--text)' }}>Cardiac Phase / HRV</p>
+          <HRVChart readings={readings} />
         </div>
 
         {/* Summary */}
